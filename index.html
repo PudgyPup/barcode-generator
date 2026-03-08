@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barcode Label Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+</head>
+<body>
+
+  <h1>🏷️ Barcode Label Generator</h1>
+  <p class="subtitle">Generate vector SVG barcodes ready for print</p>
+
+  <div class="card">
+    <div class="field">
+      <label>Barcode Value</label>
+      <input id="val" type="text" placeholder="e.g. 012345678905" value="012345678905">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Barcode Format</label>
+        <select id="fmt">
+          <option value="CODE128">Code 128 (general)</option>
+          <option value="EAN13">EAN-13 (retail)</option>
+          <option value="EAN8">EAN-8</option>
+          <option value="UPC">UPC-A</option>
+          <option value="CODE39">Code 39</option>
+          <option value="ITF14">ITF-14 (shipping)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Bar Color</label>
+        <input id="barColor" type="color" value="#000000">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Label Title</label>
+        <input id="titleText" type="text" placeholder="e.g. Product Name">
+      </div>
+      <div class="field">
+        <label>Label Subtitle</label>
+        <input id="subtitleText" type="text" placeholder="e.g. SKU: A-001">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Bar Width (px)</label>
+        <input id="barWidth" type="number" value="2" min="1" max="5">
+      </div>
+      <div class="field">
+        <label>Bar Height (px)</label>
+        <input id="barHeight" type="number" value="80" min="20" max="200">
+      </div>
+    </div>
+    <button class="btn" onclick="generate()">Generate Barcode</button>
+    <p class="error" id="err">⚠️ Invalid value for this barcode format.</p>
+  </div>
+
+  <div class="preview-card" id="preview">
+    <h2>Preview</h2>
+    <div id="label-output">
+      <div id="label-title"></div>
+      <svg id="barcode"></svg>
+      <div id="label-subtitle"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-outline" onclick="downloadSVG()">⬇ Download SVG</button>
+      <button class="btn-outline" onclick="downloadPNG()">⬇ Download PNG</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
