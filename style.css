@@ -135,6 +135,14 @@ select option { background: #1a1d27; }
 .btn-remove:hover { background: #ff6b6b22; }
 
 /* Main buttons */
+.filename-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filename-row input { flex: 1; }
+.filename-ext { font-size: 0.85rem; color: #666; white-space: nowrap; }
+
 .btn {
   width: 100%;
   padding: 12px;

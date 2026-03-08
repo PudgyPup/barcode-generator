@@ -153,11 +153,16 @@ function buildExportSVG() {
   return svg;
 }
 
+function getFileName() {
+  const name = document.getElementById('fileName').value.trim();
+  return name || 'barcode-label';
+}
+
 function downloadSVG() {
   const blob = new Blob([buildExportSVG()], { type: 'image/svg+xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'barcode-label.svg';
+  a.download = getFileName() + '.svg';
   a.click();
 }
 
@@ -173,7 +178,7 @@ function downloadPNG() {
     ctx.scale(3, 3);
     ctx.drawImage(img, 0, 0);
     const a = document.createElement('a');
-    a.download = 'barcode-label.png';
+    a.download = getFileName() + '.png';
     a.href = canvas.toDataURL('image/png');
     a.click();
     URL.revokeObjectURL(url);
