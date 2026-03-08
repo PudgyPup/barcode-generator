@@ -26,6 +26,10 @@
         <label>B&W Threshold <span id="threshVal">128</span></label>
         <input type="range" id="threshold" min="0" max="255" value="128" oninput="updateThreshold(this.value)">
       </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="stretchImg" onchange="renderImageSlot()">
+        <label for="stretchImg" style="text-transform:none; letter-spacing:0; font-size:0.88rem; color:#ccc; cursor:pointer;">Stretch image to full label height (keep proportions)</label>
+      </div>
       <div class="img-preview-row">
         <div>
           <div class="mini-label">Original</div>

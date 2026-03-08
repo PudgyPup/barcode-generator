@@ -69,10 +69,17 @@ function applyThreshold(thresh) {
 
 function renderImageSlot() {
   const imgSlot = document.getElementById('img-slot');
-  if (bwDataUrl) {
-    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="max-height:120px;max-width:120px;object-fit:contain;">`;
+  if (!bwDataUrl) { imgSlot.innerHTML = ''; return; }
+  const stretch = document.getElementById('stretchImg').checked;
+  if (stretch) {
+    // Fill the full height of the label-output row, width auto-follows aspect ratio
+    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="height:100%;width:auto;object-fit:contain;align-self:stretch;display:block;">`;
+    imgSlot.style.alignSelf = 'stretch';
+    imgSlot.style.display   = 'flex';
   } else {
-    imgSlot.innerHTML = '';
+    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="max-height:120px;max-width:120px;object-fit:contain;">`;
+    imgSlot.style.alignSelf = '';
+    imgSlot.style.display   = '';
   }
 }
 
@@ -126,17 +133,16 @@ function buildExportSVG() {
   const bcH     = parseInt(svgEl.getAttribute('height')) || 100;
 
   const pad = 20;
-  const imgSize = bwDataUrl ? bcH : 0;   // square image, same height as barcode
-  const gap = bwDataUrl ? 20 : 0;
-
-  const titleH  = title ? 22 : 0;
-  const subH    = sub   ? 18 : 0;
-  const innerH  = titleH + bcH + subH + 10;
-  const totalH  = innerH + pad * 2;
-  const totalW  = imgSize + gap + bcW + pad * 2;
-
-  let y = pad;
-  let barcodeX = pad + imgSize + gap;
+  const stretch  = bwDataUrl && document.getElementById('stretchImg').checked;
+  const contentH = titleH + bcH + subH + 10;        // height of barcode column content
+  const imgH     = stretch ? contentH : (bwDataUrl ? bcH : 0);
+  const aspectR  = originalImage ? originalImage.naturalWidth / originalImage.naturalHeight : 1;
+  const imgW     = bwDataUrl ? Math.round(imgH * aspectR) : 0;
+  const gap      = bwDataUrl ? 20 : 0;
+  const totalH   = contentH + pad * 2;
+  const totalW   = imgW + gap + bcW + pad * 2;
+  const imgY     = stretch ? pad : pad + titleH;  // stretch from top of content; else align with barcode
+  let barcodeX   = pad + imgW + gap;
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${totalW}" height="${totalH}">`;
   svg += `<rect width="${totalW}" height="${totalH}" fill="white"/>`;
