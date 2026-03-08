@@ -72,14 +72,9 @@ function renderImageSlot() {
   if (!bwDataUrl) { imgSlot.innerHTML = ''; return; }
   const stretch = document.getElementById('stretchImg').checked;
   if (stretch) {
-    // Fill the full height of the label-output row, width auto-follows aspect ratio
-    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="height:100%;width:auto;object-fit:contain;align-self:stretch;display:block;">`;
-    imgSlot.style.alignSelf = 'stretch';
-    imgSlot.style.display   = 'flex';
+    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="height:100%;width:auto;max-width:160px;">`;
   } else {
-    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="max-height:120px;max-width:120px;object-fit:contain;">`;
-    imgSlot.style.alignSelf = '';
-    imgSlot.style.display   = '';
+    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="max-height:120px;max-width:120px;">`;
   }
 }
 
