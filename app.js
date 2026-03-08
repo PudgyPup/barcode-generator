@@ -1,3 +1,91 @@
+// ── Image state ──────────────────────────────────────────
+let originalImage = null;   // HTMLImageElement
+let bwDataUrl = null;        // processed B&W image as data URL
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      document.getElementById('imgOriginal').src = ev.target.result;
+      document.getElementById('imgControls').style.display = 'block';
+      document.getElementById('uploadLabel').textContent = '✅ ' + file.name;
+      applyThreshold(parseInt(document.getElementById('threshold').value));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateThreshold(val) {
+  document.getElementById('threshVal').textContent = val;
+  applyThreshold(parseInt(val));
+}
+
+function applyThreshold(thresh) {
+  if (!originalImage) return;
+
+  // Draw original to hidden canvas at a capped size
+  const maxSize = 300;
+  const scale = Math.min(1, maxSize / Math.max(originalImage.width, originalImage.height));
+  const w = Math.round(originalImage.width * scale);
+  const h = Math.round(originalImage.height * scale);
+
+  const procCanvas = document.getElementById('processCanvas');
+  procCanvas.width = w;
+  procCanvas.height = h;
+  const ctx = procCanvas.getContext('2d');
+  ctx.drawImage(originalImage, 0, 0, w, h);
+
+  // Convert to B&W using luminance threshold
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+    const bw = lum >= thresh ? 255 : 0;
+    d[i] = d[i+1] = d[i+2] = bw;
+    d[i+3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // Copy to preview canvas
+  const prev = document.getElementById('previewCanvas');
+  prev.width = w;
+  prev.height = h;
+  prev.getContext('2d').putImageData(imgData, 0, 0);
+
+  // Save data URL for label rendering + export
+  bwDataUrl = procCanvas.toDataURL('image/png');
+
+  // Update label preview if already showing
+  const imgSlot = document.getElementById('img-slot');
+  if (document.getElementById('preview').style.display === 'block') {
+    renderImageSlot();
+  }
+}
+
+function renderImageSlot() {
+  const imgSlot = document.getElementById('img-slot');
+  if (bwDataUrl) {
+    imgSlot.innerHTML = `<img src="${bwDataUrl}" style="max-height:120px;max-width:120px;object-fit:contain;">`;
+  } else {
+    imgSlot.innerHTML = '';
+  }
+}
+
+function removeImage() {
+  originalImage = null;
+  bwDataUrl = null;
+  document.getElementById('imgUpload').value = '';
+  document.getElementById('imgControls').style.display = 'none';
+  document.getElementById('uploadLabel').textContent = '📁 Click or drag an image here';
+  document.getElementById('img-slot').innerHTML = '';
+}
+
+// ── Barcode generation ───────────────────────────────────
 function generate() {
   const val = document.getElementById('val').value.trim();
   const fmt = document.getElementById('fmt').value;
@@ -21,6 +109,7 @@ function generate() {
     });
     document.getElementById('label-title').textContent = title;
     document.getElementById('label-subtitle').textContent = sub;
+    renderImageSlot();
     document.getElementById('preview').style.display = 'block';
     document.getElementById('preview').scrollIntoView({ behavior: 'smooth' });
   } catch (e) {
@@ -28,29 +117,52 @@ function generate() {
   }
 }
 
-function getSVGString() {
-  const svgEl = document.getElementById('barcode');
-  const title = document.getElementById('label-title').textContent;
-  const sub = document.getElementById('label-subtitle').textContent;
-  const svgW = svgEl.getAttribute('width') || 300;
-  const svgH = svgEl.getAttribute('height') || 100;
-  const barcodeContent = svgEl.innerHTML;
-  const totalH = parseInt(svgH) + (title ? 30 : 0) + (sub ? 22 : 0) + 20;
+// ── SVG export ───────────────────────────────────────────
+function buildExportSVG() {
+  const svgEl   = document.getElementById('barcode');
+  const title   = document.getElementById('label-title').textContent;
+  const sub     = document.getElementById('label-subtitle').textContent;
+  const bcW     = parseInt(svgEl.getAttribute('width'))  || 300;
+  const bcH     = parseInt(svgEl.getAttribute('height')) || 100;
 
-  let y = 10;
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${totalH}">`;
-  svg += `<rect width="${svgW}" height="${totalH}" fill="white"/>`;
+  const pad = 20;
+  const imgSize = bwDataUrl ? bcH : 0;   // square image, same height as barcode
+  const gap = bwDataUrl ? 20 : 0;
+
+  const titleH  = title ? 22 : 0;
+  const subH    = sub   ? 18 : 0;
+  const innerH  = titleH + bcH + subH + 10;
+  const totalH  = innerH + pad * 2;
+  const totalW  = imgSize + gap + bcW + pad * 2;
+
+  let y = pad;
+  let barcodeX = pad + imgSize + gap;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${totalW}" height="${totalH}">`;
+  svg += `<rect width="${totalW}" height="${totalH}" fill="white"/>`;
+
+  // Embedded B&W image on the left
+  if (bwDataUrl) {
+    svg += `<image href="${bwDataUrl}" x="${pad}" y="${pad}" width="${imgSize}" height="${imgSize}" preserveAspectRatio="xMidYMid meet"/>`;
+  }
+
+  // Title
   if (title) {
-    y += 20;
-    svg += `<text x="${svgW/2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#111">${escXml(title)}</text>`;
+    y += 16;
+    svg += `<text x="${barcodeX + bcW/2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#111">${escXml(title)}</text>`;
     y += 6;
   }
-  svg += `<g transform="translate(0,${y})">${barcodeContent}</g>`;
-  y += parseInt(svgH);
+
+  // Barcode
+  svg += `<g transform="translate(${barcodeX},${y})">${svgEl.innerHTML}</g>`;
+  y += bcH;
+
+  // Subtitle
   if (sub) {
-    y += 16;
-    svg += `<text x="${svgW/2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#555">${escXml(sub)}</text>`;
+    y += 14;
+    svg += `<text x="${barcodeX + bcW/2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#555">${escXml(sub)}</text>`;
   }
+
   svg += `</svg>`;
   return svg;
 }
@@ -60,7 +172,7 @@ function escXml(s) {
 }
 
 function downloadSVG() {
-  const blob = new Blob([getSVGString()], { type: 'image/svg+xml' });
+  const blob = new Blob([buildExportSVG()], { type: 'image/svg+xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'barcode-label.svg';
@@ -68,12 +180,12 @@ function downloadSVG() {
 }
 
 function downloadPNG() {
-  const svg = getSVGString();
+  const svg = buildExportSVG();
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = img.width * 3;
+    canvas.width  = img.width  * 3;
     canvas.height = img.height * 3;
     const ctx = canvas.getContext('2d');
     ctx.scale(3, 3);
@@ -87,5 +199,5 @@ function downloadPNG() {
   img.src = url;
 }
 
-// Auto-generate on page load
+// Auto-generate on load
 generate();

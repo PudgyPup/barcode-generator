@@ -14,13 +14,24 @@ body {
 h1 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 28px; }
 
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6c63ff;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2a2d3a;
+}
+
 .card, .preview-card {
   background: #1a1d27;
   border: 1px solid #2a2d3a;
   border-radius: 14px;
   padding: 28px;
   width: 100%;
-  max-width: 560px;
+  max-width: 600px;
 }
 
 .preview-card {
@@ -62,11 +73,54 @@ input, select {
 }
 
 input[type="color"] { height: 42px; padding: 4px 8px; cursor: pointer; }
+input[type="range"] { padding: 4px 0; accent-color: #6c63ff; }
 input:focus, select:focus { border-color: #6c63ff; }
 select option { background: #1a1d27; }
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
+/* Upload area */
+.upload-area {
+  position: relative;
+  border: 2px dashed #2a2d3a;
+  border-radius: 10px;
+  padding: 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s;
+  margin-bottom: 14px;
+}
+.upload-area:hover { border-color: #6c63ff; }
+.upload-area input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; padding: 0;
+  border: none; background: none;
+}
+#uploadLabel { font-size: 0.9rem; color: #888; pointer-events: none; }
+
+/* Image controls */
+.img-preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.thumb { width: 90px; height: 90px; object-fit: contain; border-radius: 6px; border: 1px solid #2a2d3a; background: #fff; display: block; }
+.mini-label { font-size: 0.7rem; color: #888; text-align: center; margin-bottom: 4px; }
+.btn-remove {
+  margin-top: auto;
+  padding: 6px 14px;
+  background: transparent;
+  color: #ff6b6b;
+  border: 1.5px solid #ff6b6b;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-remove:hover { background: #ff6b6b22; }
+
+/* Main buttons */
 .btn {
   width: 100%;
   padding: 12px;
@@ -96,17 +150,35 @@ select option { background: #1a1d27; }
 }
 .btn-outline:hover { background: #6c63ff22; }
 
+/* Label output — horizontal layout */
 #label-output {
   background: #fff;
   border-radius: 10px;
   padding: 20px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
 }
 
-#label-title { font-size: 1rem; font-weight: 700; color: #111; text-align: center; }
+#img-slot img {
+  display: block;
+  max-height: 120px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+#img-slot:empty { display: none; }
+
+#barcode-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+#label-title  { font-size: 1rem; font-weight: 700; color: #111; text-align: center; }
 #label-subtitle { font-size: 0.78rem; color: #555; text-align: center; }
 #barcode { max-width: 100%; }
 
