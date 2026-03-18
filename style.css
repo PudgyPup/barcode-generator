@@ -225,7 +225,36 @@ textarea {
 }
 textarea:focus { border-color: #6c63ff; }
 
-/* Start picker grid */
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 16px;
+  background: #1a1d27;
+  border: 1px solid #2a2d3a;
+  border-radius: 10px;
+  padding: 5px;
+}
+.tab {
+  flex: 1;
+  padding: 9px 12px;
+  background: transparent;
+  color: #888;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.tab:hover { color: #ccc; }
+.tab.active { background: #6c63ff; color: #fff; }
+
+.tab-panel { width: 100%; max-width: 600px; }
+
+
 .start-picker { margin-top: 6px; }
 .label-grid {
   display: inline-grid;
