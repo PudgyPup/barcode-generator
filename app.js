@@ -1,3 +1,11 @@
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+
 // ── Image state ──────────────────────────────────────────
 let originalImage = null;
 let bwDataUrl = null;
