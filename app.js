@@ -244,7 +244,89 @@ function downloadPNG() {
 }
 
 // ── Print Sheet ───────────────────────────────────────────
-function printSheet() {
+function downloadSheetPDF() {
+  const errEl = document.getElementById('printErr');
+  errEl.style.display = 'none';
+
+  const tpl     = TEMPLATES[document.getElementById('averyTemplate').value];
+  const fmt     = document.getElementById('averyFmt').value;
+  const color   = document.getElementById('averyColor').value;
+  const title   = document.getElementById('averyTitle').value;
+  const sub     = document.getElementById('averySub').value;
+  const fillAll = document.getElementById('fillAll').checked;
+
+  let upcs;
+  if (fillAll) {
+    const single = document.getElementById('singleUpc').value.trim();
+    if (!single) {
+      errEl.textContent = '⚠️ Please enter a barcode value.';
+      errEl.style.display = 'block';
+      return;
+    }
+    upcs = Array(tpl.count - startPos + 1).fill(single);
+  } else {
+    upcs = document.getElementById('upcList').value
+             .split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  if (!upcs.length) {
+    errEl.textContent = '⚠️ Please enter at least one UPC.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc  = new jsPDF({ unit: 'in', format: 'letter' });
+  const tiny = tpl.labelH < 0.6;
+
+  const pad      = 0.04;
+  const titleHIn = title && !tiny ? 0.13 : 0;
+  const subHIn   = sub   && !tiny ? 0.11 : 0;
+  const bcHIn    = tpl.labelH - titleHIn - subHIn - pad * 2;
+  const bcHPx    = Math.round(bcHIn * 120);
+
+  let upcIdx = 0;
+  for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
+    const upc = upcs[upcIdx++];
+    const row = Math.floor((pos - 1) / tpl.cols);
+    const col = (pos - 1) % tpl.cols;
+    const lx  = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
+    const ly  = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
+
+    const canvas = document.createElement('canvas');
+    try {
+      JsBarcode(canvas, upc, {
+        format: fmt, lineColor: color,
+        width: 1, height: bcHPx,
+        displayValue: true, background: '#ffffff',
+        margin: 1, fontSize: tiny ? 5 : 7
+      });
+    } catch(e) { continue; }
+
+    let curY = ly + pad;
+
+    if (title && !tiny) {
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, lx + tpl.labelW / 2, curY + titleHIn * 0.75, { align: 'center' });
+      curY += titleHIn;
+    }
+
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG',
+      lx + pad, curY, tpl.labelW - pad * 2, bcHIn);
+    curY += bcHIn;
+
+    if (sub && !tiny) {
+      doc.setFontSize(4.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(sub, lx + tpl.labelW / 2, curY + subHIn * 0.75, { align: 'center' });
+    }
+  }
+
+  doc.save('avery-' + tpl.name + '-labels.pdf');
+}
+
+
   const errEl = document.getElementById('printErr');
   errEl.style.display = 'none';
 

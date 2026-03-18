@@ -6,6 +6,7 @@
   <title>Barcode Label Generator</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -202,7 +203,10 @@
         <textarea id="upcList" rows="7" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
       </div>
 
-      <button class="btn" onclick="printSheet()">🖨️ Generate Print Sheet</button>
+      <div class="actions" style="margin-top:0">
+        <button class="btn" onclick="printSheet()">🖨️ Generate Print Sheet</button>
+        <button class="btn-outline" onclick="downloadSheetPDF()">⬇ Download PDF</button>
+      </div>
       <p class="error" id="printErr"></p>
     </div>
   </div>
