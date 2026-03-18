@@ -124,6 +124,43 @@
     </div>
   </div>
 
+  <!-- PRINT SHEET -->
+  <div class="card" style="margin-top:20px">
+    <div class="section-title">🖨️ Print Avery Sheet</div>
+
+    <div class="row">
+      <div class="field">
+        <label>Avery Template</label>
+        <select id="averyTemplate" onchange="updateStartPicker()">
+          <option value="5160">5160 – Address (2⅝" × 1", 30/sheet)</option>
+          <option value="5167">5167 – Return Address (1¾" × ½", 80/sheet)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Start at Position <span id="startNum" style="color:#6c63ff">1</span></label>
+        <input type="number" id="startInput" min="1" value="1" oninput="setStart(parseInt(this.value)||1)">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Label Sheet Preview — click a cell to set start position</label>
+      <div id="startPicker" class="start-picker"></div>
+      <p class="picker-legend">
+        <span class="leg leg-used"></span> Already used &nbsp;
+        <span class="leg leg-start"></span> Start here &nbsp;
+        <span class="leg leg-avail"></span> Available
+      </p>
+    </div>
+
+    <div class="field">
+      <label>UPC List — one per line</label>
+      <textarea id="upcList" rows="7" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
+    </div>
+
+    <button class="btn" onclick="printSheet()">🖨️ Generate Print Sheet</button>
+    <p class="error" id="printErr"></p>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

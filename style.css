@@ -210,4 +210,51 @@ select option { background: #1a1d27; }
 #barcode { max-width: 100%; }
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0f1117;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  font-family: monospace;
+  outline: none;
+  resize: vertical;
+  transition: border .2s;
+}
+textarea:focus { border-color: #6c63ff; }
+
+/* Start picker grid */
+.start-picker { margin-top: 6px; }
+.label-grid {
+  display: inline-grid;
+  gap: 3px;
+  background: #0f1117;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  padding: 10px;
+}
+.grid-cell {
+  width: 22px; height: 16px;
+  border-radius: 3px;
+  border: 1px solid #3a3d4a;
+  background: #2a2d3a;
+  font-size: 7px;
+  color: #888;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+  user-select: none;
+}
+.grid-cell:hover  { border-color: #6c63ff; color: #ccc; }
+.grid-cell.used   { background: #1a1a1a; color: #444; border-color: #222; cursor: default; }
+.grid-cell.selected { background: #6c63ff; color: #fff; border-color: #6c63ff; }
+
+.picker-legend { font-size: 0.75rem; color: #666; margin-top: 8px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.leg { display: inline-block; width: 14px; height: 10px; border-radius: 2px; border: 1px solid #555; }
+.leg-used  { background: #1a1a1a; }
+.leg-start { background: #6c63ff; border-color: #6c63ff; }
+.leg-avail { background: #2a2d3a; }
+
 .error { color: #ff6b6b; font-size: 0.85rem; margin-top: 10px; display: none; }
