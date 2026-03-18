@@ -133,7 +133,7 @@
   <div id="tab-avery" class="tab-panel" style="display:none">
     <div class="card">
 
-      <div class="section-title">Template & Start Position</div>
+      <div class="section-title">Template &amp; Start Position</div>
       <div class="row">
         <div class="field">
           <label>Avery Template</label>
@@ -203,11 +203,12 @@
         <textarea id="upcList" rows="7" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
       </div>
 
-      <div class="actions" style="margin-top:0">
-        <button class="btn" onclick="printSheet()">🖨️ Generate Print Sheet</button>
+      <p class="error" id="printErr"></p>
+      <div class="actions">
+        <button class="btn" onclick="printSheet()">🖨️ Print Sheet</button>
         <button class="btn-outline" onclick="downloadSheetPDF()">⬇ Download PDF</button>
       </div>
-      <p class="error" id="printErr"></p>
+
     </div>
   </div>
 

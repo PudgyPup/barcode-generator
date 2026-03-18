@@ -6,16 +6,10 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 }
 
-function toggleFillAll() {
-  const checked = document.getElementById('fillAll').checked;
-  document.getElementById('singleUpcField').style.display = checked ? 'block' : 'none';
-  document.getElementById('upcListField').style.display   = checked ? 'none'  : 'block';
-}
-
-
+// ── Avery Templates ───────────────────────────────────────
 const TEMPLATES = {
-  '5160': { name:'5160', labelW:2.625, labelH:1,   cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0    },
-  '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0    },
+  '5160': { name:'5160', labelW:2.625, labelH:1,   cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0 },
+  '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0 },
 };
 
 let startPos = 1;
@@ -50,6 +44,12 @@ function refreshGrid() {
     if (!el) continue;
     el.className = 'grid-cell' + (i < startPos ? ' used' : i === startPos ? ' selected' : '');
   }
+}
+
+function toggleFillAll() {
+  const checked = document.getElementById('fillAll').checked;
+  document.getElementById('singleUpcField').style.display = checked ? 'block' : 'none';
+  document.getElementById('upcListField').style.display   = checked ? 'none'  : 'block';
 }
 
 // ── Image state ───────────────────────────────────────────
@@ -132,7 +132,7 @@ function removeImage() {
   document.getElementById('img-slot').innerHTML = '';
 }
 
-// ── Barcode ───────────────────────────────────────────────
+// ── Single barcode ────────────────────────────────────────
 function generate() {
   const val   = document.getElementById('val').value.trim();
   const fmt   = document.getElementById('fmt').value;
@@ -156,13 +156,25 @@ function generate() {
   }
 }
 
-// ── Export ────────────────────────────────────────────────
+// ── Export helpers ────────────────────────────────────────
 function escXml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getUpcs() {
+  const fillAll = document.getElementById('fillAll').checked;
+  if (fillAll) {
+    const single = document.getElementById('singleUpc').value.trim();
+    if (!single) return null;
+    const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
+    return Array(tpl.count - startPos + 1).fill(single);
+  }
+  return document.getElementById('upcList').value
+           .split('\n').map(s => s.trim()).filter(Boolean);
 }
 
 function buildExportSVG() {
@@ -191,7 +203,6 @@ function buildExportSVG() {
   let y   = pad;
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${totalW}" height="${totalH}">`;
   svg    += `<rect width="${totalW}" height="${totalH}" fill="white"/>`;
-
   if (bwDataUrl) {
     svg += `<image href="${bwDataUrl}" x="${pad}" y="${imgY}" width="${imgW}" height="${imgH}" preserveAspectRatio="xMidYMid meet"/>`;
   }
@@ -211,8 +222,7 @@ function buildExportSVG() {
 }
 
 function getFileName() {
-  const name = document.getElementById('fileName').value.trim();
-  return name || 'barcode-label';
+  return (document.getElementById('fileName').value.trim()) || 'barcode-label';
 }
 
 function downloadSVG() {
@@ -243,119 +253,24 @@ function downloadPNG() {
   img.src = url;
 }
 
-// ── Print Sheet ───────────────────────────────────────────
-function downloadSheetPDF() {
-  const errEl = document.getElementById('printErr');
-  errEl.style.display = 'none';
-
-  const tpl     = TEMPLATES[document.getElementById('averyTemplate').value];
-  const fmt     = document.getElementById('averyFmt').value;
-  const color   = document.getElementById('averyColor').value;
-  const title   = document.getElementById('averyTitle').value;
-  const sub     = document.getElementById('averySub').value;
-  const fillAll = document.getElementById('fillAll').checked;
-
-  let upcs;
-  if (fillAll) {
-    const single = document.getElementById('singleUpc').value.trim();
-    if (!single) {
-      errEl.textContent = '⚠️ Please enter a barcode value.';
-      errEl.style.display = 'block';
-      return;
-    }
-    upcs = Array(tpl.count - startPos + 1).fill(single);
-  } else {
-    upcs = document.getElementById('upcList').value
-             .split('\n').map(s => s.trim()).filter(Boolean);
-  }
-
-  if (!upcs.length) {
-    errEl.textContent = '⚠️ Please enter at least one UPC.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc  = new jsPDF({ unit: 'in', format: 'letter' });
-  const tiny = tpl.labelH < 0.6;
-
-  const pad      = 0.04;
-  const titleHIn = title && !tiny ? 0.13 : 0;
-  const subHIn   = sub   && !tiny ? 0.11 : 0;
-  const bcHIn    = tpl.labelH - titleHIn - subHIn - pad * 2;
-  const bcHPx    = Math.round(bcHIn * 120);
-
-  let upcIdx = 0;
-  for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
-    const upc = upcs[upcIdx++];
-    const row = Math.floor((pos - 1) / tpl.cols);
-    const col = (pos - 1) % tpl.cols;
-    const lx  = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
-    const ly  = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
-
-    const canvas = document.createElement('canvas');
-    try {
-      JsBarcode(canvas, upc, {
-        format: fmt, lineColor: color,
-        width: 1, height: bcHPx,
-        displayValue: true, background: '#ffffff',
-        margin: 1, fontSize: tiny ? 5 : 7
-      });
-    } catch(e) { continue; }
-
-    let curY = ly + pad;
-
-    if (title && !tiny) {
-      doc.setFontSize(5.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, lx + tpl.labelW / 2, curY + titleHIn * 0.75, { align: 'center' });
-      curY += titleHIn;
-    }
-
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG',
-      lx + pad, curY, tpl.labelW - pad * 2, bcHIn);
-    curY += bcHIn;
-
-    if (sub && !tiny) {
-      doc.setFontSize(4.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(sub, lx + tpl.labelW / 2, curY + subHIn * 0.75, { align: 'center' });
-    }
-  }
-
-  doc.save('avery-' + tpl.name + '-labels.pdf');
-}
-
-
+// ── Print sheet (browser) ─────────────────────────────────
+function printSheet() {
   const errEl = document.getElementById('printErr');
   errEl.style.display = 'none';
 
   const tpl   = TEMPLATES[document.getElementById('averyTemplate').value];
-  const fillAll = document.getElementById('fillAll').checked;
-  let upcs;
-  if (fillAll) {
-    const single = document.getElementById('singleUpc').value.trim();
-    if (!single) {
-      errEl.textContent = '⚠️ Please enter a barcode value.';
-      errEl.style.display = 'block';
-      return;
-    }
-    const available = tpl.count - startPos + 1;
-    upcs = Array(available).fill(single);
-  } else {
-    upcs = document.getElementById('upcList').value
-             .split('\n').map(s => s.trim()).filter(Boolean);
-  }
   const fmt   = document.getElementById('averyFmt').value;
   const color = document.getElementById('averyColor').value;
   const title = document.getElementById('averyTitle').value;
   const sub   = document.getElementById('averySub').value;
+  const upcs  = getUpcs();
 
-  if (!upcs.length) {
+  if (!upcs || !upcs.length) {
     errEl.textContent = '⚠️ Please enter at least one UPC.';
     errEl.style.display = 'block';
     return;
   }
+
   const available = tpl.count - startPos + 1;
   if (upcs.length > available) {
     errEl.textContent = `⚠️ ${upcs.length} UPCs but only ${available} labels available from position ${startPos}. Extra UPCs will be ignored.`;
@@ -440,12 +355,85 @@ function buildPrintHTML(tpl, labels, fmt, color, title, sub) {
 ${divs}
 </div>
 <script>
-window.onload = function() {
-${inits}
-};
+window.onload = function() { ${inits} };
 <\/script>
 </body>
 </html>`;
+}
+
+// ── Download PDF ──────────────────────────────────────────
+function downloadSheetPDF() {
+  const errEl = document.getElementById('printErr');
+  errEl.style.display = 'none';
+
+  const tpl   = TEMPLATES[document.getElementById('averyTemplate').value];
+  const fmt   = document.getElementById('averyFmt').value;
+  const color = document.getElementById('averyColor').value;
+  const title = document.getElementById('averyTitle').value;
+  const sub   = document.getElementById('averySub').value;
+  const upcs  = getUpcs();
+
+  if (!upcs || !upcs.length) {
+    errEl.textContent = '⚠️ Please enter at least one UPC.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if (!window.jspdf) {
+    errEl.textContent = '⚠️ PDF library not loaded. Check your internet connection and refresh.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc  = new jsPDF({ unit: 'in', format: 'letter' });
+  const tiny = tpl.labelH < 0.6;
+
+  const pad      = 0.04;
+  const titleHIn = title && !tiny ? 0.13 : 0;
+  const subHIn   = sub   && !tiny ? 0.11 : 0;
+  const bcHIn    = tpl.labelH - titleHIn - subHIn - pad * 2;
+  const bcHPx    = Math.round(bcHIn * 120);
+
+  let upcIdx = 0;
+  for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
+    const upc = upcs[upcIdx++];
+    const row = Math.floor((pos - 1) / tpl.cols);
+    const col = (pos - 1) % tpl.cols;
+    const lx  = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
+    const ly  = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
+
+    const canvas = document.createElement('canvas');
+    try {
+      JsBarcode(canvas, upc, {
+        format: fmt, lineColor: color,
+        width: 1, height: bcHPx,
+        displayValue: true, background: '#ffffff',
+        margin: 1, fontSize: tiny ? 5 : 7
+      });
+    } catch(e) { continue; }
+
+    let curY = ly + pad;
+
+    if (title && !tiny) {
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, lx + tpl.labelW / 2, curY + titleHIn * 0.75, { align: 'center' });
+      curY += titleHIn;
+    }
+
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG',
+      lx + pad, curY, tpl.labelW - pad * 2, bcHIn);
+    curY += bcHIn;
+
+    if (sub && !tiny) {
+      doc.setFontSize(4.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(sub, lx + tpl.labelW / 2, curY + subHIn * 0.75, { align: 'center' });
+    }
+  }
+
+  doc.save('avery-' + tpl.name + '-labels.pdf');
 }
 
 // ── Init ──────────────────────────────────────────────────
