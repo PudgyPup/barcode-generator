@@ -6,7 +6,13 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 }
 
-// ── Avery Templates ───────────────────────────────────────
+function toggleFillAll() {
+  const checked = document.getElementById('fillAll').checked;
+  document.getElementById('singleUpcField').style.display = checked ? 'block' : 'none';
+  document.getElementById('upcListField').style.display   = checked ? 'none'  : 'block';
+}
+
+
 const TEMPLATES = {
   '5160': { name:'5160', labelW:2.625, labelH:1,   cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0    },
   '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0.05 },
@@ -244,8 +250,21 @@ function printSheet() {
   errEl.style.display = 'none';
 
   const tpl   = TEMPLATES[document.getElementById('averyTemplate').value];
-  const upcs  = document.getElementById('upcList').value
-                  .split('\n').map(s => s.trim()).filter(Boolean);
+  const fillAll = document.getElementById('fillAll').checked;
+  let upcs;
+  if (fillAll) {
+    const single = document.getElementById('singleUpc').value.trim();
+    if (!single) {
+      errEl.textContent = '⚠️ Please enter a barcode value.';
+      errEl.style.display = 'block';
+      return;
+    }
+    const available = tpl.count - startPos + 1;
+    upcs = Array(available).fill(single);
+  } else {
+    upcs = document.getElementById('upcList').value
+             .split('\n').map(s => s.trim()).filter(Boolean);
+  }
   const fmt   = document.getElementById('averyFmt').value;
   const color = document.getElementById('averyColor').value;
   const title = document.getElementById('averyTitle').value;
