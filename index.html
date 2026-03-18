@@ -189,7 +189,15 @@
       </div>
 
       <div class="section-title" style="margin-top:22px">UPC List</div>
-      <div class="field">
+      <div class="field checkbox-field">
+        <input type="checkbox" id="fillAll" onchange="toggleFillAll()">
+        <label for="fillAll" style="text-transform:none;letter-spacing:0;font-size:0.88rem;color:#ccc;cursor:pointer;">Print same barcode on all available labels</label>
+      </div>
+      <div id="singleUpcField" class="field" style="display:none">
+        <label>Barcode Value</label>
+        <input id="singleUpc" type="text" placeholder="e.g. 012345678905">
+      </div>
+      <div id="upcListField" class="field">
         <label>One UPC per line</label>
         <textarea id="upcList" rows="7" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
       </div>
