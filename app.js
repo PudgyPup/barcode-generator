@@ -6,7 +6,47 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 }
 
-// ── Image state ──────────────────────────────────────────
+// ── Avery Templates ───────────────────────────────────────
+const TEMPLATES = {
+  '5160': { name:'5160', labelW:2.625, labelH:1,   cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0    },
+  '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0.05 },
+};
+
+let startPos = 1;
+
+function updateStartPicker() {
+  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
+  const picker = document.getElementById('startPicker');
+  let html = `<div class="label-grid" style="grid-template-columns:repeat(${tpl.cols},1fr)">`;
+  for (let i = 1; i <= tpl.count; i++) {
+    html += `<div class="grid-cell" id="gc${i}" onclick="setStart(${i})">${i}</div>`;
+  }
+  html += '</div>';
+  picker.innerHTML = html;
+  startPos = 1;
+  document.getElementById('startInput').max = tpl.count;
+  refreshGrid();
+}
+
+function setStart(n) {
+  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
+  n = Math.max(1, Math.min(n, tpl.count));
+  startPos = n;
+  document.getElementById('startNum').textContent = n;
+  document.getElementById('startInput').value = n;
+  refreshGrid();
+}
+
+function refreshGrid() {
+  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
+  for (let i = 1; i <= tpl.count; i++) {
+    const el = document.getElementById('gc' + i);
+    if (!el) continue;
+    el.className = 'grid-cell' + (i < startPos ? ' used' : i === startPos ? ' selected' : '');
+  }
+}
+
+// ── Image state ───────────────────────────────────────────
 let originalImage = null;
 let bwDataUrl = null;
 
@@ -116,12 +156,16 @@ function escXml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function buildExportSVG() {
-  const svgEl  = document.getElementById('barcode');
-  const title  = document.getElementById('label-title').textContent;
-  const sub    = document.getElementById('label-subtitle').textContent;
-  const bcW    = parseInt(svgEl.getAttribute('width'))  || 300;
-  const bcH    = parseInt(svgEl.getAttribute('height')) || 100;
+  const svgEl   = document.getElementById('barcode');
+  const title   = document.getElementById('label-title').textContent;
+  const sub     = document.getElementById('label-subtitle').textContent;
+  const bcW     = parseInt(svgEl.getAttribute('width'))  || 300;
+  const bcH     = parseInt(svgEl.getAttribute('height')) || 100;
   const stretch = !!(bwDataUrl && document.getElementById('stretchImg').checked);
 
   const pad      = 20;
@@ -194,63 +238,18 @@ function downloadPNG() {
   img.src = url;
 }
 
-
-// ── Avery Templates ───────────────────────────────────────
-const TEMPLATES = {
-  '5160': { name:'5160', labelW:2.625, labelH:1,    cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0    },
-  '5167': { name:'5167', labelW:1.75,  labelH:0.5,  cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0.05 },
-};
-
-let startPos = 1;
-
-function updateStartPicker() {
-  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
-  const picker = document.getElementById('startPicker');
-  let html = `<div class="label-grid" style="grid-template-columns:repeat(${tpl.cols},1fr)">`;
-  for (let i = 1; i <= tpl.count; i++) {
-    html += `<div class="grid-cell" id="gc${i}" onclick="setStart(${i})">${i}</div>`;
-  }
-  html += '</div>';
-  picker.innerHTML = html;
-  startPos = 1;
-  document.getElementById('startInput').max = tpl.count;
-  refreshGrid();
-}
-
-function setStart(n) {
-  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
-  n = Math.max(1, Math.min(n, tpl.count));
-  startPos = n;
-  document.getElementById('startNum').textContent = n;
-  document.getElementById('startInput').value = n;
-  refreshGrid();
-}
-
-function refreshGrid() {
-  const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
-  for (let i = 1; i <= tpl.count; i++) {
-    const el = document.getElementById('gc' + i);
-    if (!el) continue;
-    el.className = 'grid-cell' + (i < startPos ? ' used' : i === startPos ? ' selected' : '');
-  }
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 // ── Print Sheet ───────────────────────────────────────────
 function printSheet() {
   const errEl = document.getElementById('printErr');
   errEl.style.display = 'none';
 
-  const tpl    = TEMPLATES[document.getElementById('averyTemplate').value];
-  const upcs   = document.getElementById('upcList').value
-                   .split('\n').map(s => s.trim()).filter(Boolean);
-  const fmt    = document.getElementById('fmt').value;
-  const color  = document.getElementById('barColor').value;
-  const title  = document.getElementById('titleText').value;
-  const sub    = document.getElementById('subtitleText').value;
+  const tpl   = TEMPLATES[document.getElementById('averyTemplate').value];
+  const upcs  = document.getElementById('upcList').value
+                  .split('\n').map(s => s.trim()).filter(Boolean);
+  const fmt   = document.getElementById('averyFmt').value;
+  const color = document.getElementById('averyColor').value;
+  const title = document.getElementById('averyTitle').value;
+  const sub   = document.getElementById('averySub').value;
 
   if (!upcs.length) {
     errEl.textContent = '⚠️ Please enter at least one UPC.';
@@ -263,7 +262,6 @@ function printSheet() {
     errEl.style.display = 'block';
   }
 
-  // Map UPCs to label positions
   const labels = [];
   let upcIdx = 0;
   for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
@@ -276,18 +274,17 @@ function printSheet() {
 }
 
 function buildPrintHTML(tpl, labels, fmt, color, title, sub) {
-  const tiny = tpl.labelH < 0.6;
+  const tiny      = tpl.labelH < 0.6;
   const titleSize = tiny ? '5pt' : '7pt';
   const subSize   = tiny ? '4pt' : '6pt';
   const bcHeight  = Math.round(tpl.labelH * 55);
 
-  // Build label divs
   let divs = '';
   for (const { pos, upc } of labels) {
     const row = Math.floor((pos - 1) / tpl.cols);
     const col = (pos - 1) % tpl.cols;
-    const x = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
-    const y = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
+    const x   = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
+    const y   = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
     divs += `
     <div class="label" style="left:${x}in;top:${y}in;width:${tpl.labelW}in;height:${tpl.labelH}in;">
       ${title ? `<div class="ltitle">${escHtml(title)}</div>` : ''}
@@ -297,7 +294,6 @@ function buildPrintHTML(tpl, labels, fmt, color, title, sub) {
     </div>`;
   }
 
-  // Barcode init calls
   const inits = labels.map(({ pos, upc }) => `
   try {
     JsBarcode('#bc${pos}', ${JSON.stringify(upc)}, {
@@ -352,6 +348,6 @@ ${inits}
 </html>`;
 }
 
-// Auto-generate on load
+// ── Init ──────────────────────────────────────────────────
 generate();
 updateStartPicker();
