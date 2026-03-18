@@ -362,7 +362,7 @@ window.onload = function() { ${inits} };
 }
 
 // ── Download PDF ──────────────────────────────────────────
-function downloadSheetPDF() {
+async function downloadSheetPDF() {
   const errEl = document.getElementById('printErr');
   errEl.style.display = 'none';
 
@@ -389,11 +389,20 @@ function downloadSheetPDF() {
   const doc  = new jsPDF({ unit: 'in', format: 'letter' });
   const tiny = tpl.labelH < 0.6;
 
-  const pad      = 0.04;
-  const titleHIn = title && !tiny ? 0.13 : 0;
-  const subHIn   = sub   && !tiny ? 0.11 : 0;
+  // DPI scale for crisp canvas rendering
+  const DPI    = 300;
+  const pad    = 0.04;
+
+  // Reserve space for title/sub in inches
+  const titleHIn = title && !tiny ? 0.14 : 0;
+  const subHIn   = sub   && !tiny ? 0.12 : 0;
   const bcHIn    = tpl.labelH - titleHIn - subHIn - pad * 2;
-  const bcHPx    = Math.round(bcHIn * 120);
+  const bcWIn    = tpl.labelW - pad * 2;
+
+  // Render barcode at high res using a scaled canvas
+  const scale  = DPI / 96;
+  const bcHPx  = Math.round(bcHIn * DPI);
+  const bcWPx  = Math.round(bcWIn * DPI);
 
   let upcIdx = 0;
   for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
@@ -403,34 +412,61 @@ function downloadSheetPDF() {
     const lx  = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
     const ly  = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
 
+    // Draw barcode onto a high-res canvas
     const canvas = document.createElement('canvas');
+    canvas.width  = bcWPx;
+    canvas.height = bcHPx;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, bcWPx, bcHPx);
+
+    const tmpSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     try {
-      JsBarcode(canvas, upc, {
+      JsBarcode(tmpSvg, upc, {
         format: fmt, lineColor: color,
-        width: 1, height: bcHPx,
+        width: Math.max(1, Math.round(bcWPx / 120)),
+        height: Math.round(bcHPx * 0.75),
         displayValue: true, background: '#ffffff',
-        margin: 1, fontSize: tiny ? 5 : 7
+        margin: 4, fontSize: tiny ? 18 : 24
       });
     } catch(e) { continue; }
 
-    let curY = ly + pad;
+    // Serialize SVG and draw onto canvas for high-res PNG
+    const svgData = new XMLSerializer().serializeToString(tmpSvg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl  = URL.createObjectURL(svgBlob);
 
-    if (title && !tiny) {
-      doc.setFontSize(5.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, lx + tpl.labelW / 2, curY + titleHIn * 0.75, { align: 'center' });
-      curY += titleHIn;
-    }
+    // Use a promise-based approach per label
+    await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, bcWPx, bcHPx);
+        URL.revokeObjectURL(svgUrl);
 
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG',
-      lx + pad, curY, tpl.labelW - pad * 2, bcHIn);
-    curY += bcHIn;
+        let curY = ly + pad;
 
-    if (sub && !tiny) {
-      doc.setFontSize(4.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(sub, lx + tpl.labelW / 2, curY + subHIn * 0.75, { align: 'center' });
-    }
+        if (title && !tiny) {
+          doc.setFontSize(6);
+          doc.setFont('helvetica', 'bold');
+          // baseline sits at curY + titleHIn - small descender offset
+          doc.text(title, lx + tpl.labelW / 2, curY + titleHIn - 0.02, { align: 'center' });
+          curY += titleHIn;
+        }
+
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG',
+          lx + pad, curY, bcWIn, bcHIn);
+        curY += bcHIn;
+
+        if (sub && !tiny) {
+          doc.setFontSize(5);
+          doc.setFont('helvetica', 'normal');
+          doc.text(sub, lx + tpl.labelW / 2, curY + subHIn - 0.02, { align: 'center' });
+        }
+
+        resolve();
+      };
+      img.src = svgUrl;
+    });
   }
 
   doc.save('avery-' + tpl.name + '-labels.pdf');
