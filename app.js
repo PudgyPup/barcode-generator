@@ -151,7 +151,6 @@ function generate() {
     document.getElementById('label-subtitle').textContent = document.getElementById('subtitleText').value;
     renderImageSlot();
     document.getElementById('preview').style.display = 'block';
-    document.getElementById('preview').scrollIntoView({ behavior: 'smooth' });
   } catch(e) {
     errEl.style.display = 'block';
   }
