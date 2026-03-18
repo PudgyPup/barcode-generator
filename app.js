@@ -15,7 +15,7 @@ function toggleFillAll() {
 
 const TEMPLATES = {
   '5160': { name:'5160', labelW:2.625, labelH:1,   cols:3, rows:10, count:30, marginTop:0.5,  marginLeft:0.19,  colGap:0.125, rowGap:0    },
-  '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0.05 },
+  '5167': { name:'5167', labelW:1.75,  labelH:0.5, cols:4, rows:20, count:80, marginTop:0.5,  marginLeft:0.305, colGap:0.297, rowGap:0    },
 };
 
 let startPos = 1;
