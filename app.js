@@ -165,16 +165,30 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Returns array of {upc, name} expanded by quantity
 function getUpcs() {
   const fillAll = document.getElementById('fillAll').checked;
   if (fillAll) {
     const single = document.getElementById('singleUpc').value.trim();
     if (!single) return null;
     const tpl = TEMPLATES[document.getElementById('averyTemplate').value];
-    return Array(tpl.count - startPos + 1).fill(single);
+    const name = document.getElementById('averyTitle').value;
+    return Array(tpl.count - startPos + 1).fill({ upc: single, name });
   }
-  return document.getElementById('upcList').value
-           .split('\n').map(s => s.trim()).filter(Boolean);
+
+  const upcs  = document.getElementById('upcList').value.split('\n').map(s => s.trim());
+  const names = document.getElementById('nameList').value.split('\n').map(s => s.trim());
+  const qtys  = document.getElementById('qtyList').value.split('\n').map(s => parseInt(s.trim()) || 1);
+  const result = [];
+
+  for (let i = 0; i < upcs.length; i++) {
+    const upc = upcs[i];
+    if (!upc) continue;
+    const name = names[i] || '';
+    const qty  = Math.max(1, qtys[i] || 1);
+    for (let q = 0; q < qty; q++) result.push({ upc, name });
+  }
+  return result.length ? result : null;
 }
 
 function buildExportSVG() {
@@ -280,7 +294,8 @@ function printSheet() {
   const labels = [];
   let upcIdx = 0;
   for (let pos = startPos; pos <= tpl.count && upcIdx < upcs.length; pos++) {
-    labels.push({ pos, upc: upcs[upcIdx++] });
+    labels.push({ pos, upc: upcs[upcIdx].upc, name: upcs[upcIdx].name });
+    upcIdx++;
   }
 
   const win = window.open('', '_blank');
@@ -295,14 +310,15 @@ function buildPrintHTML(tpl, labels, fmt, color, title, sub) {
   const bcHeight  = Math.round(tpl.labelH * 55);
 
   let divs = '';
-  for (const { pos, upc } of labels) {
+  for (const { pos, upc, name } of labels) {
     const row = Math.floor((pos - 1) / tpl.cols);
     const col = (pos - 1) % tpl.cols;
     const x   = tpl.marginLeft + col * (tpl.labelW + tpl.colGap);
     const y   = tpl.marginTop  + row * (tpl.labelH + tpl.rowGap);
+    const labelTitle = name || '';
     divs += `
     <div class="label" style="left:${x}in;top:${y}in;width:${tpl.labelW}in;height:${tpl.labelH}in;">
-      ${title ? `<div class="ltitle">${escHtml(title)}</div>` : ''}
+      ${labelTitle ? `<div class="ltitle">${escHtml(labelTitle)}</div>` : ''}
       <svg id="bc${pos}" class="bcsvg"></svg>
       ${sub ? `<div class="lsub">${escHtml(sub)}</div>` : ''}
       <span class="bc-err" style="font-size:6pt;color:red;display:none">Invalid</span>

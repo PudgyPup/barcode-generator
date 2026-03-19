@@ -199,8 +199,21 @@
         <input id="singleUpc" type="text" placeholder="e.g. 012345678905">
       </div>
       <div id="upcListField" class="field">
-        <label>One UPC per line</label>
-        <textarea id="upcList" rows="7" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
+        <label>Items — one per line, columns are synced by row</label>
+        <div class="upc-grid">
+          <div>
+            <div class="mini-label">UPC / Barcode</div>
+            <textarea id="upcList" rows="8" placeholder="012345678905&#10;012345678906&#10;012345678907"></textarea>
+          </div>
+          <div>
+            <div class="mini-label">Item Name (replaces Title)</div>
+            <textarea id="nameList" rows="8" placeholder="Widget Pro&#10;Widget Lite&#10;Widget Max"></textarea>
+          </div>
+          <div style="max-width:80px">
+            <div class="mini-label">Qty</div>
+            <textarea id="qtyList" rows="8" placeholder="10&#10;5&#10;1"></textarea>
+          </div>
+        </div>
       </div>
 
       <p class="error" id="printErr"></p>
